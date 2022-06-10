@@ -8,6 +8,13 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+var (
+	basicJsonEncoder = zapcore.NewJSONEncoder(encoderConfig)
+	colorJsonEncoder = NewColorJsonEncoder(encoderConfig)
+)
+
+// 输出到日志中的不加颜色
+// 控制台中的根据color属性判断
 func NewLogger(options ...option) *zap.Logger {
 	opt := NewLoggerOption()
 	for _, item := range options {
@@ -15,12 +22,6 @@ func NewLogger(options ...option) *zap.Logger {
 	}
 
 	var coreArr []zapcore.Core
-	var encoder zapcore.Encoder
-	if opt.Color {
-		encoder = NewColorJsonEncoder(encoderConfig)
-	} else {
-		encoder = zapcore.NewJSONEncoder(encoderConfig)
-	}
 
 	priority := getPriority(opt.Level)
 	if opt.LogPath != "" {
@@ -31,9 +32,13 @@ func NewLogger(options ...option) *zap.Logger {
 			MaxAge:     opt.LogMaxAge,     //日志文件保留天数
 			Compress:   opt.LogCompress,   //是否压缩处理
 		})
-		coreArr = append(coreArr, zapcore.NewCore(encoder, zapcore.NewMultiWriteSyncer(fileWriteSyncer, zapcore.AddSync(os.Stdout)), priority)) //第三个及之后的参数为写入文件的日志级别,ErrorLevel模式只记录error级别的日志
+		coreArr = append(coreArr, zapcore.NewCore(basicJsonEncoder, fileWriteSyncer, priority))
+	}
+
+	if opt.Color {
+		coreArr = append(coreArr, zapcore.NewCore(colorJsonEncoder, zapcore.AddSync(os.Stdout), priority))
 	} else {
-		coreArr = append(coreArr, zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), priority))
+		coreArr = append(coreArr, zapcore.NewCore(basicJsonEncoder, zapcore.AddSync(os.Stdout), priority))
 	}
 
 	return zap.New(zapcore.NewTee(coreArr...))
