@@ -57,6 +57,10 @@ func NewLogger(options ...option) *zap.Logger {
 	return l
 }
 
+func Set(name string, Logger *zap.Logger) {
+	loggerPool.Store(name, Logger)
+}
+
 func Get(name string) *zap.Logger {
 	val, ok := loggerPool.Load(name)
 	if !ok {
