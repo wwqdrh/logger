@@ -2,16 +2,25 @@ package logger
 
 import (
 	"os"
+	"sync"
 
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
+var loggerPool = sync.Map{}
+
 var (
 	basicJsonEncoder = zapcore.NewJSONEncoder(encoderConfig)
 	colorJsonEncoder = NewColorJsonEncoder(encoderConfig)
+
+	DefaultLogger *zap.Logger
 )
+
+func init() {
+	DefaultLogger = NewLogger(WithLevel(zap.InfoLevel))
+}
 
 // 输出到日志中的不加颜色
 // 控制台中的根据color属性判断
@@ -41,5 +50,22 @@ func NewLogger(options ...option) *zap.Logger {
 		coreArr = append(coreArr, zapcore.NewCore(basicJsonEncoder, zapcore.AddSync(os.Stdout), priority))
 	}
 
-	return zap.New(zapcore.NewTee(coreArr...))
+	l := zap.New(zapcore.NewTee(coreArr...))
+	if opt.Name != "" {
+		loggerPool.Store(opt.Name, l)
+	}
+	return l
+}
+
+func Get(name string) *zap.Logger {
+	val, ok := loggerPool.Load(name)
+	if !ok {
+		return DefaultLogger
+	}
+
+	if v, ok := val.(*zap.Logger); !ok {
+		return DefaultLogger
+	} else {
+		return v
+	}
 }
