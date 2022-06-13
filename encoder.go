@@ -22,32 +22,14 @@ type ColorJsonEncoder struct {
 	config zapcore.EncoderConfig
 }
 
-func NewColorJsonEncoder(config zapcore.EncoderConfig) zapcore.Encoder {
-	if config.ConsoleSeparator == "" {
-		// Use a default delimiter of '\t' for backwards compatibility
-		config.ConsoleSeparator = "\t"
-	}
-	return ColorJsonEncoder{
-		Encoder: zapcore.NewJSONEncoder(config),
-		config:  config,
-	}
+type ColorConsoleEncoder struct {
+	zapcore.Encoder
+
+	config zapcore.EncoderConfig
 }
 
-func (enc ColorJsonEncoder) Clone() zapcore.Encoder {
-	return ColorJsonEncoder{
-		Encoder: zapcore.NewJSONEncoder(enc.config),
-		config:  enc.config,
-	}
-}
-
-func (enc ColorJsonEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field) (*buffer.Buffer, error) {
-	buf, err := enc.Encoder.EncodeEntry(entry, fields)
-	if err != nil {
-		return buf, err
-	}
-
+func withColorRender(level zapcore.Level, buf *buffer.Buffer) *buffer.Buffer {
 	buffer := new(bytes.Buffer)
-	level := entry.Level
 	if level >= zap.PanicLevel {
 		buffer.Write(red)
 		buffer.Write(buf.Bytes())
@@ -64,5 +46,37 @@ func (enc ColorJsonEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Fi
 
 	buf.Reset()
 	buf.Write(buffer.Bytes())
-	return buf, nil
+	return buf
+}
+
+func NewColorJsonEncoder(config zapcore.EncoderConfig) zapcore.Encoder {
+	return ColorJsonEncoder{
+		Encoder: zapcore.NewJSONEncoder(config),
+		config:  config,
+	}
+}
+
+func NewColorConsoleEncoder(config zapcore.EncoderConfig) zapcore.Encoder {
+	return ColorJsonEncoder{
+		Encoder: zapcore.NewConsoleEncoder(config),
+		config:  config,
+	}
+}
+
+func (enc ColorJsonEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field) (*buffer.Buffer, error) {
+	buf, err := enc.Encoder.EncodeEntry(entry, fields)
+	if err != nil {
+		return buf, err
+	}
+
+	return withColorRender(entry.Level, buf), nil
+}
+
+func (enc ColorConsoleEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field) (*buffer.Buffer, error) {
+	buf, err := enc.Encoder.EncodeEntry(entry, fields)
+	if err != nil {
+		return buf, err
+	}
+
+	return withColorRender(entry.Level, buf), nil
 }

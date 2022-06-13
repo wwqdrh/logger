@@ -18,7 +18,13 @@ func main() {
 	logger.Get("info").Info("this is a info message")
 
 	// switch debug level
-	l = logger.NewLogger(logger.WithLevel(zapcore.DebugLevel), logger.WithLogPath("./logs/info2.log"), logger.WithColor(true))
+	l = logger.NewLogger(logger.WithLevel(zapcore.DebugLevel),
+		logger.WithLogPath("./logs/info2.log"),
+		logger.WithColor(true),
+		logger.WithEncoderLevel(""), // 关闭level以及time
+		logger.WithEncoderTime(""),
+		logger.WithEncoderOut("plain"),
+	)
 	l.Debug("this is a debug message")
 	l.Info("this is a info message")
 	l.Warn("this is a warn message")

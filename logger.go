@@ -12,14 +12,16 @@ import (
 var loggerPool = sync.Map{}
 
 var (
-	basicJsonEncoder = zapcore.NewJSONEncoder(encoderConfig)
-	colorJsonEncoder = NewColorJsonEncoder(encoderConfig)
-
 	DefaultLogger *zap.Logger
 )
 
 func init() {
-	DefaultLogger = NewLogger(WithLevel(zap.InfoLevel))
+	DefaultLogger = NewLogger(
+		WithLevel(zap.InfoLevel),
+		WithEncoderLevel(""),
+		WithEncoderTime(""),
+		WithEncoderOut("plain"),
+	)
 }
 
 // 输出到日志中的不加颜色
@@ -30,8 +32,25 @@ func NewLogger(options ...option) *zap.Logger {
 		item(opt)
 	}
 
-	var coreArr []zapcore.Core
+	// encoder
+	config := encoderConfig
+	config.LevelKey = opt.EncoderLevel
+	config.TimeKey = opt.EncoderTime
 
+	var (
+		basicEncoder zapcore.Encoder
+		colorEncoder zapcore.Encoder
+	)
+	if opt.EncoderOut == "json" {
+		basicEncoder = zapcore.NewJSONEncoder(config)
+		colorEncoder = NewColorJsonEncoder(config)
+	} else {
+		basicEncoder = zapcore.NewConsoleEncoder(config)
+		colorEncoder = NewColorConsoleEncoder(config)
+	}
+
+	// 构造zap
+	var coreArr []zapcore.Core
 	priority := getPriority(opt.Level)
 	if opt.LogPath != "" {
 		fileWriteSyncer := zapcore.AddSync(&lumberjack.Logger{
@@ -41,13 +60,12 @@ func NewLogger(options ...option) *zap.Logger {
 			MaxAge:     opt.LogMaxAge,     //日志文件保留天数
 			Compress:   opt.LogCompress,   //是否压缩处理
 		})
-		coreArr = append(coreArr, zapcore.NewCore(basicJsonEncoder, fileWriteSyncer, priority))
+		coreArr = append(coreArr, zapcore.NewCore(basicEncoder, fileWriteSyncer, priority))
 	}
-
 	if opt.Color {
-		coreArr = append(coreArr, zapcore.NewCore(colorJsonEncoder, zapcore.AddSync(os.Stdout), priority))
+		coreArr = append(coreArr, zapcore.NewCore(colorEncoder, zapcore.AddSync(os.Stdout), priority))
 	} else {
-		coreArr = append(coreArr, zapcore.NewCore(basicJsonEncoder, zapcore.AddSync(os.Stdout), priority))
+		coreArr = append(coreArr, zapcore.NewCore(basicEncoder, zapcore.AddSync(os.Stdout), priority))
 	}
 
 	l := zap.New(zapcore.NewTee(coreArr...))
