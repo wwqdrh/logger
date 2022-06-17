@@ -52,6 +52,7 @@ func NewLogger(options ...option) *zap.Logger {
 	// 构造zap
 	var coreArr []zapcore.Core
 	priority := getPriority(opt.Level)
+	// 是否保存到文件中
 	if opt.LogPath != "" {
 		fileWriteSyncer := zapcore.AddSync(&lumberjack.Logger{
 			Filename:   opt.LogPath,       //日志文件存放目录，如果文件夹不存在会自动创建
@@ -62,6 +63,13 @@ func NewLogger(options ...option) *zap.Logger {
 		})
 		coreArr = append(coreArr, zapcore.NewCore(basicEncoder, fileWriteSyncer, priority))
 	}
+	// 是否有flutend
+	if opt.FlutendEnable {
+		coreArr = append(coreArr,
+			zapcore.NewCore(NewBasicJsonFlutendEncoder(config, opt.FlutendHost, opt.FlutendPort), zapcore.AddSync(os.Stdout), priority),
+		)
+	}
+	// 控制台输出是否添加颜色
 	if opt.Color {
 		coreArr = append(coreArr, zapcore.NewCore(colorEncoder, zapcore.AddSync(os.Stdout), priority))
 	} else {

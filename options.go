@@ -17,6 +17,11 @@ type LoggerOptions struct {
 	LogMaxBackups int    //最大保留日志文件数量
 	LogMaxAge     int    //日志文件保留天数
 	LogCompress   bool   //是否压缩处理
+
+	// flutend config
+	FlutendEnable bool // 是否上报给fluentd
+	FlutendHost   string
+	FlutendPort   int
 }
 
 type option func(*LoggerOptions)
@@ -75,5 +80,13 @@ func WithEncoderLevel(levelKey string) option {
 func WithEncoderOut(out string) option {
 	return func(lo *LoggerOptions) {
 		lo.EncoderOut = out
+	}
+}
+
+func WithFluentd(enable bool, host string, port int) option {
+	return func(lo *LoggerOptions) {
+		lo.FlutendEnable = enable
+		lo.FlutendHost = host
+		lo.FlutendPort = port
 	}
 }
