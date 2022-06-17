@@ -52,6 +52,14 @@ func NewLogger(options ...option) *zap.Logger {
 	// 构造zap
 	var coreArr []zapcore.Core
 	priority := getPriority(opt.Level)
+	// 控制台输出是否添加颜色
+	if opt.Console {
+		if opt.Color {
+			coreArr = append(coreArr, zapcore.NewCore(colorEncoder, zapcore.AddSync(os.Stdout), priority))
+		} else {
+			coreArr = append(coreArr, zapcore.NewCore(basicEncoder, zapcore.AddSync(os.Stdout), priority))
+		}
+	}
 	// 是否保存到文件中
 	if opt.LogPath != "" {
 		fileWriteSyncer := zapcore.AddSync(&lumberjack.Logger{
@@ -68,12 +76,6 @@ func NewLogger(options ...option) *zap.Logger {
 		coreArr = append(coreArr,
 			zapcore.NewCore(NewBasicJsonFlutendEncoder(config, opt.FlutendHost, opt.FlutendPort), zapcore.AddSync(os.Stdout), priority),
 		)
-	}
-	// 控制台输出是否添加颜色
-	if opt.Color {
-		coreArr = append(coreArr, zapcore.NewCore(colorEncoder, zapcore.AddSync(os.Stdout), priority))
-	} else {
-		coreArr = append(coreArr, zapcore.NewCore(basicEncoder, zapcore.AddSync(os.Stdout), priority))
 	}
 
 	l := zap.New(zapcore.NewTee(coreArr...))

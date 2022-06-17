@@ -12,7 +12,9 @@ func main() {
 		logger.WithLevel(zapcore.WarnLevel),
 		logger.WithLogPath("./logs/info.log"),
 		logger.WithName("info"),
-		logger.WithFluentd(true, "127.0.0.1", 3306))
+		logger.WithFluentd(true, "127.0.0.1", 24224),
+		logger.WithConsole(false),
+	)
 	l.Warn("this is a debug message")
 	l.Info("this is a info message")
 	logger.Get("info").Warn("this is a debug message")

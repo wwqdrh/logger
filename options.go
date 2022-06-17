@@ -3,9 +3,10 @@ package logger
 import "go.uber.org/zap/zapcore"
 
 type LoggerOptions struct {
-	Name  string
-	Level zapcore.Level
-	Color bool
+	Name    string
+	Level   zapcore.Level
+	Color   bool
+	Console bool // 如非必要不输出到控制台，例如开启fluentd就不需要输出，除非是fluentd失败
 
 	// encoder config
 	EncoderOut   string // json plain
@@ -30,6 +31,7 @@ func NewLoggerOption() *LoggerOptions {
 	return &LoggerOptions{
 		Level:         zapcore.InfoLevel,
 		Color:         true,
+		Console:       true,
 		EncoderOut:    "json",
 		EncoderLevel:  "level",
 		EncoderTime:   "time",
@@ -88,5 +90,11 @@ func WithFluentd(enable bool, host string, port int) option {
 		lo.FlutendEnable = enable
 		lo.FlutendHost = host
 		lo.FlutendPort = port
+	}
+}
+
+func WithConsole(enable bool) option {
+	return func(lo *LoggerOptions) {
+		lo.Console = enable
 	}
 }

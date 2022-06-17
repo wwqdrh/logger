@@ -127,11 +127,14 @@ func (enc BasicJsonFlutendEncoder) EncodeEntry(entry zapcore.Entry, fields []zap
 		e := enc.client.Post(entry.Level.String(), message)
 		buf.Reset()
 		if e != nil {
-			buf.Write([]byte(fmt.Sprintf("传入flutend发生错误: %s\n", e.Error())))
+			buf.Write([]byte(fmt.Sprintf("[fluentd error] %s\n", e.Error())))
 		}
 	} else {
+		old := buf.String()
 		buf.Reset()
-		buf.Write([]byte("flutend错误停止上传: "))
+		buf.Write([]byte("[nil fluentd]: "))
+		buf.WriteString(old)
+		buf = withColorRender(entry.Level, buf)
 	}
 
 	return buf, err
