@@ -47,6 +47,17 @@ var (
 	})
 )
 
+// 动态修改
+var (
+	debugAtomicLevel  = zap.NewAtomicLevelAt(zap.DebugLevel)
+	infoAtomicLevel   = zap.NewAtomicLevelAt(zap.InfoLevel)
+	warnAtomicLevel   = zap.NewAtomicLevelAt(zap.WarnLevel)
+	errorAtomicLevel  = zap.NewAtomicLevelAt(zap.ErrorLevel)
+	dPanicAtomicLevel = zap.NewAtomicLevelAt(zap.DPanicLevel)
+	panicAtomicLevel  = zap.NewAtomicLevelAt(zap.PanicLevel)
+	fatalAtomicLevel  = zap.NewAtomicLevelAt(zap.FatalLevel)
+)
+
 func getPriority(level zapcore.Level) zap.LevelEnablerFunc {
 	switch level {
 	case zap.DebugLevel:
@@ -65,5 +76,26 @@ func getPriority(level zapcore.Level) zap.LevelEnablerFunc {
 		return fatalPriority
 	default:
 		return infoPriority
+	}
+}
+
+func getAtomicPriority(level zapcore.Level) zap.AtomicLevel {
+	switch level {
+	case zap.DebugLevel:
+		return debugAtomicLevel
+	case zap.InfoLevel:
+		return infoAtomicLevel
+	case zap.WarnLevel:
+		return warnAtomicLevel
+	case zap.ErrorLevel:
+		return errorAtomicLevel
+	case zap.DPanicLevel:
+		return dPanicAtomicLevel
+	case zap.PanicLevel:
+		return panicAtomicLevel
+	case zap.FatalLevel:
+		return fatalAtomicLevel
+	default:
+		return infoAtomicLevel
 	}
 }

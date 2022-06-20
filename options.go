@@ -1,12 +1,18 @@
 package logger
 
-import "go.uber.org/zap/zapcore"
+import (
+	"time"
+
+	"go.uber.org/zap/zapcore"
+)
 
 type LoggerOptions struct {
-	Name    string
-	Level   zapcore.Level
-	Color   bool
-	Console bool // 如非必要不输出到控制台，例如开启fluentd就不需要输出，除非是fluentd失败
+	Name       string
+	Level      zapcore.Level
+	Color      bool
+	Console    bool // 如非必要不输出到控制台，例如开启fluentd就不需要输出，除非是fluentd失败
+	Switch     bool // 是否支持动态修改等级
+	SwitchTime time.Duration
 
 	// encoder config
 	EncoderOut   string // json plain
@@ -32,6 +38,8 @@ func NewLoggerOption() *LoggerOptions {
 		Level:         zapcore.InfoLevel,
 		Color:         true,
 		Console:       true,
+		Switch:        true,
+		SwitchTime:    5 * time.Minute,
 		EncoderOut:    "json",
 		EncoderLevel:  "level",
 		EncoderTime:   "time",
@@ -52,6 +60,18 @@ func WithName(name string) option {
 func WithLevel(level zapcore.Level) option {
 	return func(lo *LoggerOptions) {
 		lo.Level = level
+	}
+}
+
+func WithSwitch(isSwitch bool) option {
+	return func(lo *LoggerOptions) {
+		lo.Switch = isSwitch
+	}
+}
+
+func WithSwitchTime(switchTime time.Duration) option {
+	return func(lo *LoggerOptions) {
+		lo.SwitchTime = switchTime
 	}
 }
 

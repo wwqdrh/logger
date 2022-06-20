@@ -3,13 +3,22 @@ package logger
 import (
 	"os"
 	"sync"
+	"time"
 
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-var loggerPool = sync.Map{}
+var (
+	loggerPool      = sync.Map{}
+	atomicLevelPool = sync.Map{} // string=>*switchContext
+)
+
+type switchContext struct {
+	l        *zap.AtomicLevel
+	duration time.Duration
+}
 
 var (
 	DefaultLogger *zap.Logger
@@ -17,6 +26,7 @@ var (
 
 func init() {
 	DefaultLogger = NewLogger(
+		WithName("default"),
 		WithLevel(zap.InfoLevel),
 		WithEncoderLevel(""),
 		WithEncoderTime(""),
@@ -30,6 +40,12 @@ func NewLogger(options ...option) *zap.Logger {
 	opt := NewLoggerOption()
 	for _, item := range options {
 		item(opt)
+	}
+
+	if val, ok := loggerPool.Load(opt.Name); ok {
+		if l, ok := val.(*zap.Logger); ok {
+			return l
+		}
 	}
 
 	// encoder
@@ -51,7 +67,19 @@ func NewLogger(options ...option) *zap.Logger {
 
 	// 构造zap
 	var coreArr []zapcore.Core
-	priority := getPriority(opt.Level)
+	// 获取level
+	var priority zap.LevelEnablerFunc
+	if opt.Switch {
+		atomicLevel := getAtomicPriority(opt.Level)
+		atomicLevelPool.Store(opt.Name, &switchContext{
+			l:        &atomicLevel,
+			duration: opt.SwitchTime,
+		})
+		priority = atomicLevel.Enabled
+	} else {
+		priority = getPriority(opt.Level)
+	}
+
 	// 控制台输出是否添加颜色
 	if opt.Console {
 		if opt.Color {
@@ -85,10 +113,12 @@ func NewLogger(options ...option) *zap.Logger {
 	return l
 }
 
+// 设置logger
 func Set(name string, Logger *zap.Logger) {
 	loggerPool.Store(name, Logger)
 }
 
+// 获取logger
 func Get(name string) *zap.Logger {
 	val, ok := loggerPool.Load(name)
 	if !ok {
@@ -100,4 +130,21 @@ func Get(name string) *zap.Logger {
 	} else {
 		return v
 	}
+}
+
+// 动态切换logger的日志级别
+func Switch(name string, level zapcore.Level) {
+	val, ok := atomicLevelPool.Load(name)
+	if !ok {
+		return
+	}
+	swit := val.(*switchContext)
+
+	// 隔一段时间自动恢复
+	go func(l zapcore.Level) {
+		<-time.After(swit.duration)
+		swit.l.SetLevel(l)
+	}(swit.l.Level())
+
+	swit.l.SetLevel(level)
 }
