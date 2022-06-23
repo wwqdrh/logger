@@ -106,7 +106,11 @@ func NewLogger(options ...option) *zap.Logger {
 		)
 	}
 
-	l := zap.New(zapcore.NewTee(coreArr...))
+	zapOpts := []zap.Option{}
+	if opt.Caller {
+		zapOpts = append(zapOpts, zap.AddCaller())
+	}
+	l := zap.New(zapcore.NewTee(coreArr...), zapOpts...)
 	if opt.Name != "" {
 		loggerPool.Store(opt.Name, l)
 	}

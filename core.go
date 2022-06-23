@@ -7,10 +7,10 @@ import (
 
 var (
 	encoderConfig zapcore.EncoderConfig = zapcore.EncoderConfig{
-		TimeKey:  "time",
-		LevelKey: "level",
-		NameKey:  "logger",
-		// CallerKey:     "caller", // if switch, hidden
+		TimeKey:       "time",
+		LevelKey:      "level",
+		NameKey:       "logger",
+		CallerKey:     "caller", // if switch, hidden
 		MessageKey:    "msg",
 		StacktraceKey: "stacktrace",
 		LineEnding:    zapcore.DefaultLineEnding,

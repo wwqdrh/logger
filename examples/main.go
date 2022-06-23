@@ -17,6 +17,7 @@ func main() {
 		logger.WithLevel(zapcore.DebugLevel),
 		logger.WithLogPath("./logs/info.log"),
 		logger.WithName("info"),
+		logger.WithCaller(false),
 		logger.WithSwitchTime(5*time.Second),
 	)
 	l.Debug("this is a debug message")
