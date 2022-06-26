@@ -30,8 +30,6 @@ type ColorJsonEncoder struct {
 
 type ColorConsoleEncoder struct {
 	zapcore.Encoder
-
-	config zapcore.EncoderConfig
 }
 
 type BasicJsonFlutendEncoder struct {
@@ -58,7 +56,10 @@ func withColorRender(level zapcore.Level, buf *buffer.Buffer) *buffer.Buffer {
 	}
 
 	buf.Reset()
-	buf.Write(buffer.Bytes())
+	_, err := buf.Write(buffer.Bytes())
+	if err != nil {
+		return nil
+	}
 	return buf
 }
 
@@ -123,17 +124,25 @@ func (enc BasicJsonFlutendEncoder) EncodeEntry(entry zapcore.Entry, fields []zap
 	// message must be a map
 	if enc.client != nil {
 		message := map[string]interface{}{}
-		json.Unmarshal(buf.Bytes(), &message)
+		if err := json.Unmarshal(buf.Bytes(), &message); err != nil {
+			return buf, err
+		}
 		e := enc.client.Post(entry.Level.String(), message)
 		buf.Reset()
 		if e != nil {
-			buf.Write([]byte(fmt.Sprintf("[fluentd error] %s\n", e.Error())))
+			if _, err := buf.Write([]byte(fmt.Sprintf("[fluentd error] %s\n", e.Error()))); err != nil {
+				return buf, err
+			}
 		}
 	} else {
 		old := buf.String()
 		buf.Reset()
-		buf.Write([]byte("[nil fluentd]: "))
-		buf.WriteString(old)
+		if _, err := buf.Write([]byte("[nil fluentd]: ")); err != nil {
+			return buf, err
+		}
+		if _, err := buf.WriteString(old); err != nil {
+			return buf, err
+		}
 		buf = withColorRender(entry.Level, buf)
 	}
 
