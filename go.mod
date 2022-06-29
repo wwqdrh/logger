@@ -4,7 +4,6 @@ go 1.17
 
 require (
 	github.com/fluent/fluent-logger-golang v1.9.0
-	github.com/huandu/go-assert v1.1.5
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/stretchr/testify v1.7.1
 	github.com/zeromicro/go-zero v1.3.4
