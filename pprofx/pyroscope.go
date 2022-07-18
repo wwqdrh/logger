@@ -1,6 +1,7 @@
-package pyroscope
+package pprofx
 
 import (
+	"context"
 	"runtime"
 
 	"github.com/pyroscope-io/client/pyroscope"
@@ -8,7 +9,7 @@ import (
 
 // appName: simple.golang.app
 // scopeUrl: http://pyroscope-server:4040
-func Start(appName, scopeUrl string) {
+func Start(appName, scopeUrl string, options TypeOptions) {
 	// These 2 lines are only required if you're using mutex or block profiling
 	// Read the explanation below for how to set these rates:
 	runtime.SetMutexProfileFraction(5)
@@ -22,21 +23,19 @@ func Start(appName, scopeUrl string) {
 		Logger: pyroscope.StandardLogger,
 		// optionally, if authentication is enabled, specify the API key:
 		// AuthToken: os.Getenv("PYROSCOPE_AUTH_TOKEN"),
-		ProfileTypes: []pyroscope.ProfileType{
-			// these profile types are enabled by default:
-			pyroscope.ProfileCPU,
-			pyroscope.ProfileAllocObjects,
-			pyroscope.ProfileAllocSpace,
-			pyroscope.ProfileInuseObjects,
-			pyroscope.ProfileInuseSpace,
-
-			// these profile types are optional:
-			pyroscope.ProfileGoroutines,
-			pyroscope.ProfileMutexCount,
-			pyroscope.ProfileMutexDuration,
-			pyroscope.ProfileBlockCount,
-			pyroscope.ProfileBlockDuration,
-		},
+		ProfileTypes: options,
 	})
-	// your code goes here
+}
+
+// 便于进行筛选
+// 例如sql或者controller或者其他
+func AddTag(labels []string, fn func()) {
+	// these two ways of adding tags are equivalent:
+	pyroscope.TagWrapper(context.Background(), pyroscope.Labels(labels...), func(c context.Context) {
+		fn()
+	})
+
+	// pprof.Do(context.Background(), pprof.Labels("controller", "slow_controller"), func(c context.Context) {
+	// 	slowCode()
+	// })
 }

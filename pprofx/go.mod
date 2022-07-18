@@ -1,4 +1,4 @@
-module github.com/wwqdrh/logger/pyroscope
+module github.com/wwqdrh/logger/pprofx
 
 go 1.17
 
