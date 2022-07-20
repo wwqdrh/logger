@@ -1,14 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"time"
 
-	"github.com/wwqdrh/logger/pyroscope"
+	"github.com/wwqdrh/logger/pprofx"
 )
 
 func main() {
-	pyroscope.Start("simple.golang.app", "http://127.0.0.1:4040")
+	pprofx.Start(context.Background(), "simple.golang.app", "http://127.0.0.1:4040", pprofx.AllTypeOptions)
 
 	for i := 0; i < 100; i++ {
 		_ = make([]int, 10)

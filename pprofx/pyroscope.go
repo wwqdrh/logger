@@ -2,20 +2,22 @@ package pprofx
 
 import (
 	"context"
+	"os"
+	"os/signal"
 	"runtime"
+	"syscall"
 
 	"github.com/pyroscope-io/client/pyroscope"
+	"github.com/wwqdrh/logger"
 )
 
 // appName: simple.golang.app
 // scopeUrl: http://pyroscope-server:4040
-func Start(appName, scopeUrl string, options TypeOptions) {
-	// These 2 lines are only required if you're using mutex or block profiling
-	// Read the explanation below for how to set these rates:
+func Start(ctx context.Context, appName, scopeUrl string, options TypeOptions) {
 	runtime.SetMutexProfileFraction(5)
 	runtime.SetBlockProfileRate(5)
 
-	pyroscope.Start(pyroscope.Config{
+	prof, err := pyroscope.Start(pyroscope.Config{
 		ApplicationName: appName,
 		// replace this with the address of pyroscope server
 		ServerAddress: scopeUrl,
@@ -25,6 +27,23 @@ func Start(appName, scopeUrl string, options TypeOptions) {
 		// AuthToken: os.Getenv("PYROSCOPE_AUTH_TOKEN"),
 		ProfileTypes: options,
 	})
+	if err != nil {
+		logger.DefaultLogger.Error(err.Error())
+		return
+	}
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+	select {
+	case <-ctx.Done():
+		if err := prof.Stop(); err != nil {
+			logger.DefaultLogger.Error(err.Error())
+		}
+	case <-quit:
+		if err := prof.Stop(); err != nil {
+			logger.DefaultLogger.Error(err.Error())
+		}
+	}
 }
 
 // 便于进行筛选
