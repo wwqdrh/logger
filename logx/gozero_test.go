@@ -10,7 +10,7 @@ import (
 )
 
 func TestGozeroLog(t *testing.T) {
-	l, err := NewZeroWriter(logger.DefaultLogger)
+	l, err := NewZeroWriter(logger.DefaultLogger.Logger)
 	assert.Nil(t, err)
 
 	zerologx.Must(err)

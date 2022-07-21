@@ -11,6 +11,9 @@ func TestDefaultLogger(t *testing.T) {
 	// Default Logger
 	DefaultLogger.Info("this is a info message")
 	DefaultLogger.Error("this is a error message")
+
+	DefaultLogger.Infox("this is a %s message", []interface{}{"infox"})
+	DefaultLogger.Errorx("this is a %s message", []interface{}{"errorx"})
 }
 
 func TestExampleCustomLogger(t *testing.T) {

@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"os"
 	"sync"
 	"time"
@@ -21,8 +22,18 @@ type switchContext struct {
 }
 
 var (
-	DefaultLogger *zap.Logger
+	DefaultLogger *ZapX
 )
+
+type ZapX struct {
+	*zap.Logger
+}
+
+func NewZapX(l *zap.Logger) *ZapX {
+	return &ZapX{
+		Logger: l,
+	}
+}
 
 func init() {
 	DefaultLogger = NewLogger(
@@ -34,16 +45,52 @@ func init() {
 	)
 }
 
+// 设置logger
+func Set(name string, Logger *zap.Logger) {
+	loggerPool.Store(name, Logger)
+}
+
+// 获取logger
+func Get(name string) *ZapX {
+	val, ok := loggerPool.Load(name)
+	if !ok {
+		return DefaultLogger
+	}
+
+	if v, ok := val.(*ZapX); !ok {
+		return DefaultLogger
+	} else {
+		return v
+	}
+}
+
+// 动态切换logger的日志级别
+func Switch(name string, level zapcore.Level) {
+	val, ok := atomicLevelPool.Load(name)
+	if !ok {
+		return
+	}
+	swit := val.(*switchContext)
+
+	// 隔一段时间自动恢复
+	go func(l zapcore.Level) {
+		<-time.After(swit.duration)
+		swit.l.SetLevel(l)
+	}(swit.l.Level())
+
+	swit.l.SetLevel(level)
+}
+
 // 输出到日志中的不加颜色
 // 控制台中的根据color属性判断
-func NewLogger(options ...option) *zap.Logger {
+func NewLogger(options ...option) *ZapX {
 	opt := NewLoggerOption()
 	for _, item := range options {
 		item(opt)
 	}
 
 	if val, ok := loggerPool.Load(opt.Name); ok {
-		if l, ok := val.(*zap.Logger); ok {
+		if l, ok := val.(*ZapX); ok {
 			return l
 		}
 	}
@@ -114,41 +161,35 @@ func NewLogger(options ...option) *zap.Logger {
 	if opt.Name != "" {
 		loggerPool.Store(opt.Name, l)
 	}
-	return l
-}
-
-// 设置logger
-func Set(name string, Logger *zap.Logger) {
-	loggerPool.Store(name, Logger)
-}
-
-// 获取logger
-func Get(name string) *zap.Logger {
-	val, ok := loggerPool.Load(name)
-	if !ok {
-		return DefaultLogger
-	}
-
-	if v, ok := val.(*zap.Logger); !ok {
-		return DefaultLogger
-	} else {
-		return v
+	return &ZapX{
+		Logger: l,
 	}
 }
 
-// 动态切换logger的日志级别
-func Switch(name string, level zapcore.Level) {
-	val, ok := atomicLevelPool.Load(name)
-	if !ok {
-		return
-	}
-	swit := val.(*switchContext)
+func (l *ZapX) Debugx(format string, value []interface{}, fields ...zap.Field) {
+	l.Logger.Debug(fmt.Sprintf(format, value...), fields...)
+}
 
-	// 隔一段时间自动恢复
-	go func(l zapcore.Level) {
-		<-time.After(swit.duration)
-		swit.l.SetLevel(l)
-	}(swit.l.Level())
+func (l *ZapX) Infox(format string, value []interface{}, fields ...zap.Field) {
+	l.Logger.Info(fmt.Sprintf(format, value...), fields...)
+}
 
-	swit.l.SetLevel(level)
+func (l *ZapX) Warnx(format string, value []interface{}, fields ...zap.Field) {
+	l.Logger.Warn(fmt.Sprintf(format, value...), fields...)
+}
+
+func (l *ZapX) Errorx(format string, value []interface{}, fields ...zap.Field) {
+	l.Logger.Error(fmt.Sprintf(format, value...), fields...)
+}
+
+func (l *ZapX) DPanicx(format string, value []interface{}, fields ...zap.Field) {
+	l.Logger.DPanic(fmt.Sprintf(format, value...), fields...)
+}
+
+func (l *ZapX) Panicx(format string, value []interface{}, fields ...zap.Field) {
+	l.Logger.Panic(fmt.Sprintf(format, value...), fields...)
+}
+
+func (l *ZapX) Fatalx(format string, value []interface{}, fields ...zap.Field) {
+	l.Logger.Fatal(fmt.Sprintf(format, value...), fields...)
 }
