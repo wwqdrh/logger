@@ -46,7 +46,7 @@ func init() {
 }
 
 // 设置logger
-func Set(name string, Logger *zap.Logger) {
+func Set(name string, Logger *ZapX) {
 	loggerPool.Store(name, Logger)
 }
 
@@ -83,6 +83,13 @@ func Switch(name string, level zapcore.Level) {
 
 // 输出到日志中的不加颜色
 // 控制台中的根据color属性判断
+// l := NewLogger(
+// 	WithLevel(zapcore.DebugLevel),
+// 	WithLogPath("./logs/info.log"),
+// 	WithName("info"),
+// 	WithCaller(false),
+// 	WithSwitchTime(2*time.Second),
+// )
 func NewLogger(options ...option) *ZapX {
 	opt := NewLoggerOption()
 	for _, item := range options {
