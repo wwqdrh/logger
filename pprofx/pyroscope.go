@@ -43,6 +43,7 @@ func Start(ctx context.Context, appName, scopeUrl string, options TypeOptions) {
 		if err := prof.Stop(); err != nil {
 			logger.DefaultLogger.Error(err.Error())
 		}
+		os.Exit(0)
 	}
 }
 
