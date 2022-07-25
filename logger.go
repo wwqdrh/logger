@@ -14,6 +14,16 @@ import (
 var (
 	loggerPool      = sync.Map{}
 	atomicLevelPool = sync.Map{} // string=>*switchContext
+	loggerLevel     = zap.InfoLevel
+	loggerLevelMap  = map[string]zapcore.Level{
+		"debug":  zap.DebugLevel,
+		"info":   zap.InfoLevel,
+		"warn":   zap.WarnLevel,
+		"error":  zap.ErrorLevel,
+		"dpanic": zap.DPanicLevel,
+		"panic":  zap.PanicLevel,
+		"fatal":  zap.FatalLevel,
+	}
 )
 
 type switchContext struct {
@@ -35,10 +45,18 @@ func NewZapX(l *zap.Logger) *ZapX {
 	}
 }
 
+// 从环境变量获取日志级别
 func init() {
+	logLevel := os.Getenv("LOGLEVEL")
+	if val, ok := loggerLevelMap[logLevel]; !ok {
+		loggerLevel = zapcore.InfoLevel // 默认info级别
+	} else {
+		loggerLevel = val
+	}
+
 	DefaultLogger = NewLogger(
 		WithName("default"),
-		WithLevel(zap.InfoLevel),
+		WithLevel(loggerLevel),
 		WithEncoderLevel(""),
 		WithEncoderTime(""),
 		WithEncoderOut("plain"),
@@ -173,30 +191,30 @@ func NewLogger(options ...option) *ZapX {
 	}
 }
 
-func (l *ZapX) Debugx(format string, value []interface{}, fields ...zap.Field) {
+func (l *ZapX) Debugx(format string, fields []zap.Field, value ...interface{}) {
 	l.Logger.Debug(fmt.Sprintf(format, value...), fields...)
 }
 
-func (l *ZapX) Infox(format string, value []interface{}, fields ...zap.Field) {
+func (l *ZapX) Infox(format string, fields []zap.Field, value ...interface{}) {
 	l.Logger.Info(fmt.Sprintf(format, value...), fields...)
 }
 
-func (l *ZapX) Warnx(format string, value []interface{}, fields ...zap.Field) {
+func (l *ZapX) Warnx(format string, fields []zap.Field, value ...interface{}) {
 	l.Logger.Warn(fmt.Sprintf(format, value...), fields...)
 }
 
-func (l *ZapX) Errorx(format string, value []interface{}, fields ...zap.Field) {
+func (l *ZapX) Errorx(format string, fields []zap.Field, value ...interface{}) {
 	l.Logger.Error(fmt.Sprintf(format, value...), fields...)
 }
 
-func (l *ZapX) DPanicx(format string, value []interface{}, fields ...zap.Field) {
+func (l *ZapX) DPanicx(format string, fields []zap.Field, value ...interface{}) {
 	l.Logger.DPanic(fmt.Sprintf(format, value...), fields...)
 }
 
-func (l *ZapX) Panicx(format string, value []interface{}, fields ...zap.Field) {
+func (l *ZapX) Panicx(format string, fields []zap.Field, value ...interface{}) {
 	l.Logger.Panic(fmt.Sprintf(format, value...), fields...)
 }
 
-func (l *ZapX) Fatalx(format string, value []interface{}, fields ...zap.Field) {
+func (l *ZapX) Fatalx(format string, fields []zap.Field, value ...interface{}) {
 	l.Logger.Fatal(fmt.Sprintf(format, value...), fields...)
 }
