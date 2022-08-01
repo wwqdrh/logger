@@ -11,27 +11,29 @@ import (
 	"github.com/wwqdrh/logger"
 )
 
+// a goroutine, avoid block main g
 // appName: simple.golang.app
 // scopeUrl: http://pyroscope-server:4040
-func Start(ctx context.Context, appName, scopeUrl string, options TypeOptions) {
+func Start(ctx context.Context, option *PprofOption) {
 	runtime.SetMutexProfileFraction(5)
 	runtime.SetBlockProfileRate(5)
 
 	prof, err := pyroscope.Start(pyroscope.Config{
-		ApplicationName: appName,
+		ApplicationName: option.AppName,
 		// replace this with the address of pyroscope server
-		ServerAddress: scopeUrl,
+		ServerAddress: option.Server,
 		// you can disable logging by setting this to nil
 		Logger: pyroscope.StandardLogger,
 		// optionally, if authentication is enabled, specify the API key:
 		// AuthToken: os.Getenv("PYROSCOPE_AUTH_TOKEN"),
-		ProfileTypes: options,
+		ProfileTypes: option.Options,
 	})
 	if err != nil {
 		logger.DefaultLogger.Error(err.Error())
 		return
 	}
 
+	// 捕获退出信号
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 	select {

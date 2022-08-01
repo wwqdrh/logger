@@ -9,7 +9,11 @@ import (
 )
 
 func main() {
-	pprofx.Start(context.Background(), "simple.golang.app", "http://127.0.0.1:4040", pprofx.AllTypeOptions)
+	pprofx.Start(context.Background(), pprofx.NewPprofOption(
+		"http://127.0.0.1:4040",
+		"simple.golang.app",
+		pprofx.WithPprofType(pprofx.AllTypeOptions...),
+	))
 
 	for i := 0; i < 100; i++ {
 		_ = make([]int, 10)
